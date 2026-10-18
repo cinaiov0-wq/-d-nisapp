@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="az">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Telegram Mini App - Ödəniş Sistemi</title>
+    
+    <!-- Telegram WebApp Skripti -->
+    <script src="https://telegram.org"></script>
+
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f4f6f9;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 80vh;
+            color: #333;
+        }
+
+        h1 {
+            font-size: 22px;
+            margin-bottom: 5px;
+            color: #007bff;
+        }
+
+        .subtitle {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .btn {
+            width: 100%;
+            max-width: 300px;
+            padding: 15px;
+            font-size: 16px;
+            font-weight: bold;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            text-align: center;
+            display: block;
+            box-sizing: border-box;
+        }
+
+        .btn-blue {
+            background-color: #007bff;
+            color: white;
+        }
+
+        .btn-blue:hover {
+            background-color: #0056b3;
+        }
+
+        /* Qəbz düyməsi label (etiket) olaraq dizayn edildi */
+        .btn-green {
+            background-color: #28a745;
+            color: white;
+            margin-top: 15px;
+        }
+
+        .btn-green:hover {
+            background-color: #218838;
+        }
+
+        .btn-close {
+            background-color: #6c757d;
+            color: white;
+            margin-top: 40px;
+        }
+
+        .card-container {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 10px;
+        }
+
+        .credit-card {
+            width: 290px;
+            height: 170px;
+            background: linear-gradient(135deg, #1f1c2c, #928dab);
+            border-radius: 15px;
+            padding: 20px;
+            color: white;
+            text-align: left;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+            box-sizing: border-box;
+            position: relative;
+        }
+
+        .card-chip {
+            width: 40px;
+            height: 28px;
+            background-color: #e5c158;
+            border-radius: 4px;
+            margin-bottom: 25px;
+        }
+
+        .card-number {
+            font-size: 20px;
+            letter-spacing: 2px;
+            margin-bottom: 20px;
+            font-family: 'Courier New', Courier, monospace;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+        }
+
+        .card-details {
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .card-label {
+            font-size: 9px;
+            text-transform: uppercase;
+            color: #ccc;
+            display: block;
+            margin-bottom: 2px;
+        }
+
+        .card-value {
+            font-size: 13px;
+            font-weight: bold;
+        }
+
+        .status-container {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-top: 4px solid #007bff;
+            border-radius: 50%;
+            width: 35px;
+            height: 35px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        #statusMesaj {
+            font-size: 16px;
+            font-weight: bold;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Salam!</h1>
+    <p class="subtitle">Bu sizin ilk Mini App-inizdir.</p>
+
+    <!-- 1. ÖDƏNİŞ ET DÜYMƏSİ -->
+    <button id="odenisBtn" class="btn btn-blue" onclick="kartiGoster()">💳 Ödəniş et</button>
+
+    <!-- 2. KART MƏLUMATLARI VƏ QƏBZ DÜYMƏSİ -->
+    <div id="kartBolmesi" class="card-container hidden">
+        <div class="credit-card">
+            <div class="card-chip"></div>
+            <div class="card-number">4123 4567 8901 2345</div>
+            <div class="card-details">
+                <div>
+                    <span class="card-label">Kart Sahibi</span>
+                    <span class="card-value">TEST USER</span>
+                </div>
+                <div>
+                    <span class="card-label">Tarix</span>
+                    <span class="card-value">12/29</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Gizli Qalereya Girişi (Input) -->
+        <input type="file" id="qebzYukle" accept="image/*" class="hidden" onchange="sorgunuYoxla()">
+        
+        <!-- Qəbz əlavə et düyməsi (Klikləndə yuxarıdakı gizli inputu tetikler və qalereyanı açır) -->
+        <label for="qebzYukle" class="btn btn-green">📄 Qəbzi əlavə et</label>
+    </div>
+
+    <!-- 3. SORĞU YOXLANILIR STATUSU -->
+    <div id="statusBolmesi" class="status-container hidden">
+        <div id="loadingSpinner" class="spinner"></div>
+        <p id="statusMesaj">Sorğu yoxlanılır, zəhmət olmasa gözləyin...</p>
+    </div>
+
+    <!-- Telegram Tətbiqini Bağlamaq Düyməsi -->
+    <button class="btn btn-close" onclick="Telegram.WebApp.close()">Tətbiqi Bağla</button>
+
+    <script>
+        Telegram.WebApp.ready();
+        Telegram.WebApp.expand();
+
+        // 1. "Ödəniş et" düyməsinə basıldıqda kartı göstərir
+        function kartiGoster() {
+            document.getElementById('kartBolmesi').classList.remove('hidden');
+            document.getElementById('odenisBtn').classList.add('hidden');
+        }
+
+        // 2. Qalereyadan şəkil seçildikdən sonra avtomatik işə düşür
+        function sorgunuYoxla() {
+            var fileInput = document.getElementById('qebzYukle');
+            
+            // İstifadəçinin şəkil seçib-seçmədiyini yoxlayırıq
+            if (fileInput.files.length > 0) {
+                document.getElementById('kartBolmesi').classList.add('hidden');
+                document.getElementById('statusBolmesi').classList.remove('hidden');
+
+                // 3 saniyəlik süni gözləmə effekti
+                setTimeout(function() {
+                    document.getElementById('loadingSpinner').classList.add('hidden');
+                    
+                    var statusMətni = document.getElementById('statusMesaj');
+                    statusMətni.innerHTML = "✅ Qəbz uğurla yükləndi və sorğu təsdiqləndi!";
+                    statusMətni.style.color = "#28a745";
+                }, 3000);
+            }
+        }
+    </script>
+
+</body>
+</html>
